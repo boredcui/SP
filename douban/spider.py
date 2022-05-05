@@ -4,7 +4,7 @@
 Author: boredcui 1637188453@qq.com
 Date: 2022-05-03 20:27:45
 LastEditors: boredcui 1637188453@qq.com
-LastEditTime: 2022-05-04 21:15:42
+LastEditTime: 2022-05-05 21:10:48
 FilePath: \SP\douban\spider.py
 Description: 
 
@@ -25,17 +25,68 @@ def main():
     savepath = ".\\豆瓣电影TOP250.xls"
     # 3.保存数据
     # saveDate(savepath)
-    askURL("https://movie.douban.com/top250?start=")
+    # askURL("https://movie.douban.com/top250?start=")
+
+
+findLink = re.compile(r'<a href="(.*?)">')  # 创建影片链接正则表达式对象
+findImgSrc = re.compile(r'<img.*src="(.*?)"', re.S)  # 图片 re.S 让换行符包含在字符内
+findTitle = re.compile(r'<span class="title">(.*)</span>')  # 片名
+findRating = re.compile(
+    r'<span class="rating_num" property="v:average">(.*)</span>')  # 评分
+findJudge = re.compile(r'<span>(\d*)人评价</span>')  # 评价人数
+findInq = re.compile(r'<span class="inq">(.*)</span>')  # 概况
+findBd = re.compile(r'<p class="">(.*?)</p>', re.S)  # 相关内容
 
 
 # 爬取网页
 def getDate(baseurl):
     datalist = []
-    for i in range(0, 10):  # 调用获取页面信息的函数，10次
+    for i in range(0, 1):  # 调用获取页面信息的函数，10次
         url = baseurl+str(i*25)
         html = askURL(url)  # 保存获取到的网页源码
 
         # 2.逐一解析数据
+        soup = BeautifulSoup(html, "html.parser")
+        for item in soup.find_all('div', class_="item"):  # 查找符合要求的字符串，形成列表
+            # print(item)#test
+            data = []  # 保存一部电影的所有信息
+            item = str(item)
+
+            Link = re.findall(findLink, item)[0]  # 通过正则表达式查找影片链接的字符串
+            data.append(Link)  # 添加链接
+
+            imgSrc = re.findall(findImgSrc, item)[0]
+            data.append(imgSrc)  # 添加图片
+
+            titles = re.findall(findTitle, item)
+            if(len(titles) == 2):
+                ctitle = titles[0]
+                data.append(ctitle)  # 添加中文名
+                otitle = titles[1].replace("/", "")  # 去掉无关的符号
+                data.append(otitle)  # 添加外文名
+            else:
+                data.append(titles[0])
+                data.append(' ')  # 外文名留空
+
+            rating = re.findall(findRating, item)[0]
+            data.append(rating)  # 添加评分
+
+            judgeNum = re.findall(findJudge, item)[0]
+            data.append(judgeNum)  # 添加评价人数
+
+            inq = re.findall(findInq, item)
+            if len(inq) != 0:
+                inq = inq[0].replace("。", "")  # 去掉句号
+                data.append(inq)  # 添加概述
+            else:
+                data.append(" ")  # 留空
+
+            bd = re.findall(findBd, item)[0]
+            bd = re.sub('<br(\s+)?/>(\s+)?', " ", bd)  # 去掉<br/>
+            bd = re.sub('/', " ", bd)  # 替换/
+            data.append(bd.strip())  # strip去掉前后的空格
+
+            datalist.append(data)  # 把处理好的电影信息放入
 
     return datalist
 
@@ -51,7 +102,7 @@ def askURL(url):
     try:
         response = urllib.request.urlopen(request)
         html = response.read().decode("utf-8")
-        print(html)
+        # print(html)
     except urllib.error.URLError as e:
         if hasattr(e, "code"):
             print(e.code)
