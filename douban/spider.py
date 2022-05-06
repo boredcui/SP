@@ -4,7 +4,7 @@
 Author: boredcui 1637188453@qq.com
 Date: 2022-05-03 20:27:45
 LastEditors: boredcui 1637188453@qq.com
-LastEditTime: 2022-05-05 21:10:48
+LastEditTime: 2022-05-06 15:30:27
 FilePath: \SP\douban\spider.py
 Description: 
 
@@ -22,9 +22,9 @@ def main():
     baseurl = "https://movie.douban.com/top250?start="
     # 1.爬取数据
     datalist = getDate(baseurl)
-    savepath = ".\\豆瓣电影TOP250.xls"
+    savepath = "./douban/豆瓣电影TOP250.xls"
     # 3.保存数据
-    # saveDate(savepath)
+    saveDate(datalist, savepath)
     # askURL("https://movie.douban.com/top250?start=")
 
 
@@ -41,7 +41,7 @@ findBd = re.compile(r'<p class="">(.*?)</p>', re.S)  # 相关内容
 # 爬取网页
 def getDate(baseurl):
     datalist = []
-    for i in range(0, 1):  # 调用获取页面信息的函数，10次
+    for i in range(0, 10):  # 调用获取页面信息的函数，10次
         url = baseurl+str(i*25)
         html = askURL(url)  # 保存获取到的网页源码
 
@@ -113,9 +113,20 @@ def askURL(url):
 
 
 # 保存数据
-def saveDate(savepath):
-    print("save")
+def saveDate(datalist, savepath):
+    book = xlwt.Workbook(encoding="utf-8", style_compression=0)  # 创建workbook对象
+    sheet = book.add_sheet('豆瓣电影TOP250', cell_overwrite_ok=True)  # 创建工作表
+    col = ("电影详情链接", "图片链接", "影片中文名", "影片外文名", "评分", "评价数", "概况", "相关信息")
+    for i in range(0, 8):
+        sheet.write(0, i, col[i])  # 列名
+    for i in range(0, 250):
+        print("第%d条" % (i+1))
+        data = datalist[i]
+        for j in range(0, 8):
+            sheet.write(i+1, j, data[j])  # 数据
+    book.save(savepath)  # 保存
 
 
 if __name__ == "__main__":
     main()
+    print("爬取完毕")
