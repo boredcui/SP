@@ -2,14 +2,15 @@
 # coding=utf-8
 '''
 Author: boredcui 1637188453@qq.com
-Date: 2022-05-03 20:27:45
+Date: 2022-05-11 17:31:30
 LastEditors: boredcui 1637188453@qq.com
-LastEditTime: 2022-05-06 15:30:27
+LastEditTime: 2022-05-11 20:52:41
 FilePath: \SP\douban\spider.py
 Description: 
 
 Copyright (c) 2022 by boredcui 1637188453@qq.com, All Rights Reserved. 
 '''
+
 from bs4 import BeautifulSoup  # 网页解析，获取数据
 import re  # 正则式表达，进行文字匹配
 import urllib.request  # 制定URL，获取网页数据
@@ -23,8 +24,10 @@ def main():
     # 1.爬取数据
     datalist = getDate(baseurl)
     savepath = "./douban/豆瓣电影TOP250.xls"
+    dbpath = "./douban/movieTop250.db"
     # 3.保存数据
-    saveDate(datalist, savepath)
+    # saveDate(datalist, savepath)
+    saveDateDB(datalist, dbpath)
     # askURL("https://movie.douban.com/top250?start=")
 
 
@@ -125,6 +128,48 @@ def saveDate(datalist, savepath):
         for j in range(0, 8):
             sheet.write(i+1, j, data[j])  # 数据
     book.save(savepath)  # 保存
+
+
+def saveDateDB(datalist, dbpath):
+    init_db(dbpath)
+    conn = sqlite3.connect(dbpath)
+    cur = conn.cursor()
+
+    for data in datalist:
+        for index in range(len(data)):
+            if index == 4 or index == 5:
+                continue
+            data[index] = '"'+data[index]+'"'
+        sql = '''
+            insert into movie(info_link,pic_link,cname,ename,score,rated,introduction,info)
+            values(%s)
+        ''' % ",".join(data)
+        cur.execute(sql)
+        conn.commit()
+    cur.close()
+    conn.close()
+
+
+def init_db(dbpath):
+    sql = '''
+        create table movie
+        (
+            id integer primary key autoincrement,
+            info_link text,
+            pic_link text,
+            cname varchar,
+            ename varchar,
+            score numeric,
+            rated numric,
+            introduction text,
+            info text
+        )
+    '''  # 创建数据表
+    conn = sqlite3.connect(dbpath)
+    cursor = conn.cursor()
+    cursor.execute(sql)
+    conn.commit()
+    conn.close()
 
 
 if __name__ == "__main__":
