@@ -4,8 +4,8 @@
 Author: boredcui 1637188453@qq.com
 Date: 2022-05-11 17:31:30
 LastEditors: boredcui 1637188453@qq.com
-LastEditTime: 2022-05-11 20:52:41
-FilePath: \SP\douban\spider.py
+LastEditTime: 2022-05-12 16:17:14
+FilePath: \spider\spidermovie.py
 Description: 
 
 Copyright (c) 2022 by boredcui 1637188453@qq.com, All Rights Reserved. 
@@ -23,8 +23,8 @@ def main():
     baseurl = "https://movie.douban.com/top250?start="
     # 1.爬取数据
     datalist = getDate(baseurl)
-    savepath = "./douban/豆瓣电影TOP250.xls"
-    dbpath = "./douban/movieTop250.db"
+    savepath = "./douban/spider/豆瓣电影TOP250.xls"
+    dbpath = "./douban/spider/movieTop250.db"
     # 3.保存数据
     # saveDate(datalist, savepath)
     saveDateDB(datalist, dbpath)
