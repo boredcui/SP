@@ -2,10 +2,10 @@
 # coding=utf-8
 '''
 Author: boredcui 1637188453@qq.com
-Date: 2022-05-11 17:31:30
+Date: 2022-05-13 15:39:12
 LastEditors: boredcui 1637188453@qq.com
-LastEditTime: 2022-05-13 16:57:17
-FilePath: \spider\spidermovie.py
+LastEditTime: 2022-05-13 20:10:05
+FilePath: \douban\spider\spiderbook.py
 Description: 
 
 Copyright (c) 2022 by boredcui 1637188453@qq.com, All Rights Reserved. 
@@ -20,25 +20,26 @@ import sqlite3  # sqlite数据库
 
 
 def main():
-    baseurl = "https://movie.douban.com/top250?start="
+    baseurl = "https://book.douban.com/top250?start="
     # 1.爬取数据
     datalist = getDate(baseurl)
-    savepath = "./spider/豆瓣电影TOP250.xls"
-    dbpath = "./spider/movieTop250.db"
+    savepath = "./spider/豆瓣读书TOP250.xls"
+    dbpath = "./spider/bookTop250.db"
     # 3.保存数据
     # saveDate(datalist, savepath)
-    # saveDateDB(datalist, dbpath)
-    # askURL("https://movie.douban.com/top250?start=")
+    saveDateDB(datalist, dbpath)
+    # askURL("https://book.douban.com/top250?start=")
 
 
-findLink = re.compile(r'<a href="(.*?)">')  # 创建影片链接正则表达式对象
-findImgSrc = re.compile(r'<img.*src="(.*?)"', re.S)  # 图片 re.S 让换行符包含在字符内
-findTitle = re.compile(r'<span class="title">(.*)</span>')  # 片名
-findRating = re.compile(
-    r'<span class="rating_num" property="v:average">(.*)</span>')  # 评分
-findJudge = re.compile(r'<span>(\d*)人评价</span>')  # 评价人数
+findLink = re.compile(r'<a href="(.*?)".*>')  # 创建影片链接正则表达式对象
+findImgSrc = re.compile(r'<img.src="(.*?)"', re.S)  # 图片 re.S 让换行符包含在字符内
+findTitle = re.compile(r'title="(.*?)">')  # 片名
+findEname = re.compile(r'<span style="font-size:12px;">(.*)</span>')
+findRating = re.compile(r'<span class="rating_nums">(.*)</span>')  # 评分
+# 评价人数
+findJudge = re.compile(r'<span class="pl">(.*?)</span>', re.S)
 findInq = re.compile(r'<span class="inq">(.*)</span>')  # 概况
-findBd = re.compile(r'<p class="">(.*?)</p>', re.S)  # 相关内容
+findauthor = re.compile(r'<p class="pl">(.*?)/.*</p>', re.S)  # 相关内容
 
 
 # 爬取网页
@@ -50,7 +51,7 @@ def getDate(baseurl):
 
         # 2.逐一解析数据
         soup = BeautifulSoup(html, "html.parser")
-        for item in soup.find_all('div', class_="item"):  # 查找符合要求的字符串，形成列表
+        for item in soup.find_all('tr', class_="item"):  # 查找符合要求的字符串，形成列表
             # print(item)  # test
             data = []  # 保存一部电影的所有信息
             item = str(item)
@@ -61,21 +62,25 @@ def getDate(baseurl):
             imgSrc = re.findall(findImgSrc, item)[0]
             data.append(imgSrc)  # 添加图片
 
-            titles = re.findall(findTitle, item)
-            if(len(titles) == 2):
-                ctitle = titles[0]
-                data.append(ctitle)  # 添加中文名
-                otitle = titles[1].replace("/", "")  # 去掉无关的符号
+            ctitle = re.findall(findTitle, item)[0]
+            data.append(ctitle)  # 添加中文名
+            otitle = re.findall(findEname, item)
+            if(len(otitle) != 0):
+                otitle = otitle[0]
                 data.append(otitle)  # 添加外文名
             else:
-                data.append(titles[0])
                 data.append(' ')  # 外文名留空
 
             rating = re.findall(findRating, item)[0]
             data.append(rating)  # 添加评分
 
+            # judgeNum = re.findall(findJudge, item)[0]
+            # data.append(judgeNum)  # 添加评价人数
             judgeNum = re.findall(findJudge, item)[0]
-            data.append(judgeNum)  # 添加评价人数
+            judgeNum = re.sub('((\s+)?)(\s+)?', "", judgeNum)
+            judgeNum = judgeNum.replace("(", "")
+            judgeNum = judgeNum.replace("人评价)", "")
+            data.append(judgeNum)
 
             inq = re.findall(findInq, item)
             if len(inq) != 0:
@@ -84,9 +89,7 @@ def getDate(baseurl):
             else:
                 data.append(" ")  # 留空
 
-            bd = re.findall(findBd, item)[0]
-            bd = re.sub('<br(\s+)?/>(\s+)?', " ", bd)  # 去掉<br/>
-            bd = re.sub('/', " ", bd)  # 替换/
+            bd = re.findall(findauthor, item)[0]
             data.append(bd.strip())  # strip去掉前后的空格
 
             datalist.append(data)  # 把处理好的电影信息放入
@@ -118,8 +121,8 @@ def askURL(url):
 # 保存数据
 def saveDate(datalist, savepath):
     book = xlwt.Workbook(encoding="utf-8", style_compression=0)  # 创建workbook对象
-    sheet = book.add_sheet('豆瓣电影TOP250', cell_overwrite_ok=True)  # 创建工作表
-    col = ("电影详情链接", "图片链接", "影片中文名", "影片外文名", "评分", "评价数", "概况", "相关信息")
+    sheet = book.add_sheet('豆瓣读书TOP250', cell_overwrite_ok=True)  # 创建工作表
+    col = ("书籍详情链接", "图片链接", "书籍中文名", "书籍外文名", "评分", "评价数", "概况", "作者")
     for i in range(0, 8):
         sheet.write(0, i, col[i])  # 列名
     for i in range(0, 250):
@@ -141,7 +144,7 @@ def saveDateDB(datalist, dbpath):
                 continue
             data[index] = '"'+data[index]+'"'
         sql = '''
-            insert into movie(info_link,pic_link,cname,ename,score,rated,introduction,info)
+            insert into book(info_link,pic_link,cname,ename,score,rated,introduction,author)
             values(%s)
         ''' % ",".join(data)
         cur.execute(sql)
@@ -152,7 +155,7 @@ def saveDateDB(datalist, dbpath):
 
 def init_db(dbpath):
     sql = '''
-        create table movie
+        create table book
         (
             id integer primary key autoincrement,
             info_link text,
@@ -162,7 +165,7 @@ def init_db(dbpath):
             score numeric,
             rated numric,
             introduction text,
-            info text
+            author text
         )
     '''  # 创建数据表
     conn = sqlite3.connect(dbpath)
