@@ -4,7 +4,7 @@
 Author: boredcui 1637188453@qq.com
 Date: 2022-05-11 17:31:30
 LastEditors: boredcui 1637188453@qq.com
-LastEditTime: 2022-05-13 16:57:17
+LastEditTime: 2022-05-19 17:55:31
 FilePath: \spider\spidermovie.py
 Description: 
 
@@ -35,7 +35,8 @@ findLink = re.compile(r'<a href="(.*?)">')  # 创建影片链接正则表达式�
 findImgSrc = re.compile(r'<img.*src="(.*?)"', re.S)  # 图片 re.S 让换行符包含在字符内
 findTitle = re.compile(r'<span class="title">(.*)</span>')  # 片名
 findRating = re.compile(
-    r'<span class="rating_num" property="v:average">(.*)</span>')  # 评分
+    r'<span class="rating_num" property="v:average">(.*)</span>'
+)  # 评分
 findJudge = re.compile(r'<span>(\d*)人评价</span>')  # 评价人数
 findInq = re.compile(r'<span class="inq">(.*)</span>')  # 概况
 findBd = re.compile(r'<p class="">(.*?)</p>', re.S)  # 相关内容
@@ -45,7 +46,7 @@ findBd = re.compile(r'<p class="">(.*?)</p>', re.S)  # 相关内容
 def getDate(baseurl):
     datalist = []
     for i in range(0, 10):  # 调用获取页面信息的函数，10次
-        url = baseurl+str(i*25)
+        url = baseurl + str(i * 25)
         html = askURL(url)  # 保存获取到的网页源码
 
         # 2.逐一解析数据
@@ -62,7 +63,7 @@ def getDate(baseurl):
             data.append(imgSrc)  # 添加图片
 
             titles = re.findall(findTitle, item)
-            if(len(titles) == 2):
+            if len(titles) == 2:
                 ctitle = titles[0]
                 data.append(ctitle)  # 添加中文名
                 otitle = titles[1].replace("/", "")  # 去掉无关的符号
@@ -123,10 +124,10 @@ def saveDate(datalist, savepath):
     for i in range(0, 8):
         sheet.write(0, i, col[i])  # 列名
     for i in range(0, 250):
-        print("第%d条" % (i+1))
+        print("第%d条" % (i + 1))
         data = datalist[i]
         for j in range(0, 8):
-            sheet.write(i+1, j, data[j])  # 数据
+            sheet.write(i + 1, j, data[j])  # 数据
     book.save(savepath)  # 保存
 
 
@@ -139,11 +140,13 @@ def saveDateDB(datalist, dbpath):
         for index in range(len(data)):
             if index == 4 or index == 5:
                 continue
-            data[index] = '"'+data[index]+'"'
+            data[index] = '"' + data[index] + '"'
         sql = '''
             insert into movie(info_link,pic_link,cname,ename,score,rated,introduction,info)
             values(%s)
-        ''' % ",".join(data)
+        ''' % ",".join(
+            data
+        )
         cur.execute(sql)
         conn.commit()
     cur.close()
